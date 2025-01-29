@@ -15,6 +15,7 @@ import {
   type Message,
   message,
   vote,
+  type Chat,
 } from './schema';
 import { BlockKind } from '@/components/block';
 
@@ -51,10 +52,12 @@ export async function saveChat({
   id,
   userId,
   title,
+  modelId,
 }: {
   id: string;
   userId: string;
   title: string;
+  modelId: string;
 }) {
   try {
     return await db.insert(chat).values({
@@ -62,6 +65,7 @@ export async function saveChat({
       createdAt: new Date(),
       userId,
       title,
+      modelId,
     });
   } catch (error) {
     console.error('Failed to save chat in database');
@@ -81,7 +85,7 @@ export async function deleteChatById({ id }: { id: string }) {
   }
 }
 
-export async function getChatsByUserId({ id }: { id: string }) {
+export async function getChatsByUserId({ id }: { id: string }): Promise<Chat[]> {
   try {
     return await db
       .select()
@@ -94,10 +98,14 @@ export async function getChatsByUserId({ id }: { id: string }) {
   }
 }
 
-export async function getChatById({ id }: { id: string }) {
+export async function getChatById({ id }: { id: string }): Promise<Chat | undefined> {
   try {
-    const [selectedChat] = await db.select().from(chat).where(eq(chat.id, id));
-    return selectedChat;
+    const results = await db
+      .select()
+      .from(chat)
+      .where(eq(chat.id, id))
+      .limit(1);
+    return results[0];
   } catch (error) {
     console.error('Failed to get chat by id from database');
     throw error;

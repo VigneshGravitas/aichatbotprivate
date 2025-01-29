@@ -59,11 +59,14 @@ export async function POST(request: Request) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const model = models.find((model) => model.id === modelId);
-
-  if (!model) {
+  // Get the model configuration
+  const modelConfig = models.find(m => m.id === modelId);
+  if (!modelConfig) {
     return new Response('Model not found', { status: 404 });
   }
+
+  // Get the model instance
+  const modelInstance = customModel(modelId);
 
   const coreMessages = convertToCoreMessages(messages);
   const userMessage = getMostRecentUserMessage(coreMessages);
@@ -75,15 +78,32 @@ export async function POST(request: Request) {
   const chat = await getChatById({ id });
 
   if (!chat) {
-    const title = await generateTitleFromUserMessage({ message: userMessage });
-    await saveChat({ id, userId: session.user.id, title });
+    const title = await generateTitleFromUserMessage({
+      message: {
+        role: 'user',
+        content: userMessage.content,
+      },
+    });
+
+    await saveChat({
+      id,
+      userId: session.user.id,
+      title,
+      modelId,
+    });
   }
 
   const userMessageId = generateUUID();
 
   await saveMessages({
     messages: [
-      { ...userMessage, id: userMessageId, createdAt: new Date(), chatId: id },
+      {
+        id: userMessageId,
+        chatId: id,
+        role: 'user',
+        content: userMessage.content,
+        createdAt: new Date(),
+      },
     ],
   });
 
@@ -95,7 +115,7 @@ export async function POST(request: Request) {
       });
 
       const result = streamText({
-        model: customModel(model.apiIdentifier),
+        model: modelInstance,
         system: systemPrompt,
         messages: coreMessages,
         maxSteps: 5,
@@ -103,12 +123,12 @@ export async function POST(request: Request) {
         experimental_transform: smoothStream({ chunking: 'word' }),
         tools: {
           getWeather,
-          createDocument: createDocument({ session, dataStream, model }),
-          updateDocument: updateDocument({ session, dataStream, model }),
+          createDocument: createDocument({ session, dataStream, model: modelConfig }),
+          updateDocument: updateDocument({ session, dataStream, model: modelConfig }),
           requestSuggestions: requestSuggestions({
             session,
             dataStream,
-            model,
+            model: modelConfig,
           }),
         },
         onFinish: async ({ response }) => {
@@ -170,6 +190,10 @@ export async function DELETE(request: Request) {
 
   try {
     const chat = await getChatById({ id });
+    
+    if (!chat) {
+      return new Response('Not Found', { status: 404 });
+    }
 
     if (chat.userId !== session.user.id) {
       return new Response('Unauthorized', { status: 401 });
