@@ -32,6 +32,12 @@ export const models: Array<Model> = [
     apiIdentifier: 'gpt-4o',
     description: 'For complex, multi-step tasks',
   },
+  {
+    id: 'qwen2.5-0.5b-instruct',
+    label: 'qwen2.5-0.5b-instruct',
+    apiIdentifier: 'qwen2.5-0.5b-instruct',
+    description: 'Local Qwen 2.5 0.5B model running on LM Studio',
+  },
 ];
 
 export const DEFAULT_MODEL_NAME: string = 'gpt-4o-mini';

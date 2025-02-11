@@ -6,7 +6,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { customMiddleware } from './custom-middleware';
 
 // List of local model IDs
-const LOCAL_MODEL_IDS = ['qwen2.5-7b-instruct', 'deepseek-r1-distill-qwen-1.5b'];
+const LOCAL_MODEL_IDS = ['qwen2.5-7b-instruct', 'deepseek-r1-distill-qwen-1.5b', 'qwen2.5-0.5b-instruct'];
 
 // Initialize local model client
 const lmstudio = createOpenAICompatible({
